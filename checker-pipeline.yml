@@ -1,22 +1,31 @@
-trigger:
-  - main
-  - refs/pull/*/merge
+# trigger:
+#   - main
+#   - refs/pull/*/merge
+
+# parameters:
+#   - name: yamlLinterList
+#     type: object
+#     default:
+#       - path: .
+#         lintConfigurationPath: .yamllint
+#       - path: kustomizations-folder
+#         lintConfigurationPath: .yamllint_kustomize.yaml
+#   - name: kustomizeCheckList
+#     type: object
+#     default:
+#       - path: kustomizations-folder
+
+# pool:
+#   vmImage: 'ubuntu-latest'
 
 parameters:
   - name: yamlLinterList
     type: object
-    default:
-      - path: .
-        lintConfigurationPath: .yamllint
-      - path: kustomizations-folder
-        lintConfigurationPath: .yamllint_kustomize.yaml
+    default: []
   - name: kustomizeCheckList
     type: object
-    default:
-      - path: kustomizations-folder
+    default: []
 
-pool:
-  vmImage: 'ubuntu-latest'
 
 stages:
   - stage: validateFilesStage
