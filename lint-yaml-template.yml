@@ -1,0 +1,29 @@
+parameters:
+  agentPool: ''
+  targetFolder: ''
+  yamlinterImage: 'intershophub/yaml-guard:latest'
+  dockerhubServiceConnection: ''
+
+  #intershop parameters definitions
+  #dockerhubLogin:                 ${{ parameters.dockerhubLogin }}
+  #dockerhubServiceConnection:     ${{ parameters.dockerhubServiceConnection }}
+  #agentPool:                      ${{ parameters.agentPool }}
+
+jobs:
+- job: yaml_lint
+  displayName: "Run YAML Linter"
+  pool:
+    vmImage: ${{ parameters.agentPool }}
+  steps:
+    - checkout: self
+
+    - task: Docker@2
+      displayName: "Run YAML Inter on ${{ parameters.targetFolder }}"
+      inputs:
+        containerRegistry: ${{ parameters.dockerhubServiceConnection }}
+        repository: ${{ parameters.yamlinterImage }}
+        command: run
+        arguments: >
+          -v $(Build.SourcesDirectory)/${{ parameters.targetFolder }}:/src
+          ${{ parameters.yamlinterImage }} /src --recursive
+        workingDirectory: $(Build.SourcesDirectory)

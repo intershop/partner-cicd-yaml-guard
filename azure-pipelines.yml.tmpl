@@ -1,0 +1,44 @@
+trigger:
+  branches:
+    include:
+      - main
+      - refs/pull/*/merge
+  paths:
+    include:
+      - environments/**/*
+
+resources:
+  repositories:
+    # CI build pipeline repository
+    # See: https://github.com/intershop/partner-cicd-yaml-guard
+    - repository: partner-cicd-yaml-guard
+      type: github
+      name: intershop/partner-cicd-yaml-guard
+      #intershop parameters:
+      #endpoint: INTERSHOP_GITHUB
+      #ref: refs/heads/stable/yamlinter
+
+
+variables:  
+  # Library pwa-build-configuration is provided by Intershops DevOps Environment. It provides
+  # the following variables:
+  #  - BUILD_AGENT_POOL:                  name of the build agent pool
+  #  - REPO_SERVICE_CONNECTION:           service connection to the customer ACR
+  #  - REPO_PATH:                         host name and path of the customer ACR
+  - group: pwa-build-configuration
+
+stages:
+- stage: Lint
+  displayName: "YAML Lint Check"
+  jobs:
+    - template: lint-yaml-template.yml@partner-cicd-yaml-guard
+      parameters:
+        agentPool: "ubuntu-latest"
+        targetFolder: "environments"
+        dockerhubServiceConnection: "$(DOCKERHUB_PUBLIC_SERVICE_CONNECTION)"
+        yamlinterImage: "intershophub/yaml-guard:latest"
+        #intershop parameters definitions
+        #agentPool: $(BUILD_AGENT_POOL)
+        #dockerhubLogin:                 ${{ parameters.dockerhubLogin }}
+        #dockerhubServiceConnection:     ${{ parameters.dockerhubServiceConnection }}
+        #agentPool:                      ${{ parameters.agentPool }}
