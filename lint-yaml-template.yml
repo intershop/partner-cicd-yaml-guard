@@ -1,13 +1,24 @@
 parameters:
-  agentPool: ''
-  targetFolder: ''
-  yamlinterImage: 'intershophub/yaml-guard:latest'
-  dockerhubServiceConnection: ''
+  - name: agentPool
+    type: string
+    default: ''
 
-  #intershop parameters definitions
-  #dockerhubLogin:                 ${{ parameters.dockerhubLogin }}
-  #dockerhubServiceConnection:     ${{ parameters.dockerhubServiceConnection }}
-  #agentPool:                      ${{ parameters.agentPool }}
+  - name: targetFolder
+    type: string
+    default: ''
+
+  - name: yamlinterImage
+    type: string
+    default: 'intershophub/yaml-guard:latest'
+
+  - name: dockerhubLogin
+    type: boolean
+    default: false
+
+  - name: dockerhubServiceConnection
+    type: string
+    default: '$(DOCKERHUB_PUBLIC_SERVICE_CONNECTION)'
+
 
 jobs:
 - job: yaml_lint
@@ -16,6 +27,13 @@ jobs:
     vmImage: ${{ parameters.agentPool }}
   steps:
     - checkout: self
+
+    - task: Docker@2
+      displayName: "Login to DockerHub"
+      condition: and(succeeded(), eq('${{ parameters.dockerhubLogin }}', 'true'))
+      inputs:
+        command: login
+        containerRegistry: ${{ parameters.dockerhubServiceConnection }}
 
     - task: Docker@2
       displayName: "Run YAML Inter on ${{ parameters.targetFolder }}"
@@ -27,3 +45,29 @@ jobs:
           -v $(Build.SourcesDirectory)/${{ parameters.targetFolder }}:/src
           ${{ parameters.yamlinterImage }} /src --recursive
         workingDirectory: $(Build.SourcesDirectory)
+    
+    - script: |
+        echo " Validating parameters..."
+        
+        if [ -z "${{ parameters.agentPool }}" ]; then
+          echo "[ERROR] agentPool must not be empty!"
+          exit 1
+        fi
+
+        if [ -z "${{ parameters.targetFolder }}" ]; then
+          echo "[ERROR] targetFolder must not be empty!"
+          exit 1
+        fi
+
+        if [ -z "${{ parameters.yamlinterImage }}" ]; then
+          echo "[ERROR] yamlinterImage must not be empty!"
+          exit 1
+        fi
+
+        if [ "${{ parameters.dockerhubLogin }}" = "true" ] && [ -z "${{ parameters.dockerhubServiceConnection }}" ]; then
+          echo "[ERROR] dockerhubServiceConnection must not be empty when dockerhubLogin is true!"
+          exit 1
+        fi
+
+        echo "All required parameters are set."
+      displayName: "Validate YAML Linter Parameters"

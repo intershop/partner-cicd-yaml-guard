@@ -14,9 +14,8 @@ resources:
     - repository: partner-cicd-yaml-guard
       type: github
       name: intershop/partner-cicd-yaml-guard
-      #intershop parameters:
-      #endpoint: INTERSHOP_GITHUB
-      #ref: refs/heads/stable/yamlinter
+      endpoint: INTERSHOP_GITHUB
+      ref: refs/heads/stable/yamlinter
 
 
 variables:  
@@ -33,12 +32,7 @@ stages:
   jobs:
     - template: lint-yaml-template.yml@partner-cicd-yaml-guard
       parameters:
-        agentPool: "ubuntu-latest"
         targetFolder: "environments"
-        dockerhubServiceConnection: "$(DOCKERHUB_PUBLIC_SERVICE_CONNECTION)"
         yamlinterImage: "intershophub/yaml-guard:latest"
-        #intershop parameters definitions
-        #agentPool: $(BUILD_AGENT_POOL)
-        #dockerhubLogin:                 ${{ parameters.dockerhubLogin }}
-        #dockerhubServiceConnection:     ${{ parameters.dockerhubServiceConnection }}
-        #agentPool:                      ${{ parameters.agentPool }}
+        agentPool: $(BUILD_AGENT_POOL)
+        dockerhubLogin:true
