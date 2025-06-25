@@ -76,3 +76,7 @@ The pipeline:
 - Always use tagged versions or a stable branch (`main`) for this template to avoid unexpected changes.
 - The template assumes the presence of a repository named `environments` which is checked out under `externals/environments`. Update this behavior as needed if your folder structure differs.
 - The `validate_kustomize.sh` script must exist within the Docker image at `/usr/local/bin`.
+
+## 📝 License
+
+This project is distributed under the MIT License.
