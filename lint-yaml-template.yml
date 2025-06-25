@@ -1,51 +1,58 @@
 parameters:
+  # Agent pool to run the pipeline
   - name: agentPool
     type: string
     default: ''
 
-  - name: targetFolder
-    type: string
-    default: ''
-
+  # Docker image used for YAML linting
   - name: yamlinterImage
     type: string
-    default: 'intershophub/yaml-guard:latest'
+    default: 'intershophub/yaml-guard'
 
+  # Whether to log in to DockerHub before pulling image
   - name: dockerhubLogin
     type: boolean
     default: false
 
+  # DockerHub service connection for login
   - name: dockerhubServiceConnection
     type: string
     default: '$(DOCKERHUB_PUBLIC_SERVICE_CONNECTION)'
+  
+  # Relative folder path inside the repository where YAML files are located
+  - name: targetFolder
+    type: string
+    default: '.'
+  
+  # Tag of the Docker image to use (e.g., 'latest', 'v1.2.0')
+  - name: yamlinterImageTag
+    type: string
+    default: 'latest'
+
+  
 
 
 jobs:
 - job: yaml_lint
   displayName: "Run YAML Linter"
-  pool:
-    vmImage: ${{ parameters.agentPool }}
+  pool: '${{ parameters.agentPool }}'
   steps:
-    - checkout: self
-
+     
+    # Docker login step (only executed if dockerhubLogin == true)
     - task: Docker@2
       displayName: "Login to DockerHub"
       condition: and(succeeded(), eq('${{ parameters.dockerhubLogin }}', 'true'))
       inputs:
         command: login
         containerRegistry: ${{ parameters.dockerhubServiceConnection }}
+  
+    # Checkout the 'environments' repository into a specific folder
+    - checkout: environments
+      path: externals/environments
+      clean: true
+      persistCredentials: true
 
-    - task: Docker@2
-      displayName: "Run YAML Inter on ${{ parameters.targetFolder }}"
-      inputs:
-        containerRegistry: ${{ parameters.dockerhubServiceConnection }}
-        repository: ${{ parameters.yamlinterImage }}
-        command: run
-        arguments: >
-          -v $(Build.SourcesDirectory)/${{ parameters.targetFolder }}:/src
-          ${{ parameters.yamlinterImage }} /src --recursive
-        workingDirectory: $(Build.SourcesDirectory)
-    
+    # Parameter validation step to ensure required values are set
     - script: |
         echo " Validating parameters..."
         
@@ -71,3 +78,26 @@ jobs:
 
         echo "All required parameters are set."
       displayName: "Validate YAML Linter Parameters"
+
+        
+    # Run yamllint using the Docker image with internal default config
+    - script: |
+        echo "🔍 Run yamllint using image-internal config"
+        echo "Path: $(Build.SourcesDirectory)"
+        find $(Build.SourcesDirectory) -name '*.yaml' -o -name '*.yml'
+        echo "Parameters.targetFolder: ${{ parameters.targetFolder }}"
+        docker run --rm \
+          -v $(Build.SourcesDirectory):/yamls \
+          ${{ parameters.yamlinterImage }}:${{ parameters.yamlinterImageTag }} \
+          yamllint /yamls
+      displayName: "YAML Lint using internal config"
+
+
+     # Run custom validation script (e.g., for Kustomize directories)
+    - script: |
+        echo "🔍 Running validate_kustomize.sh"
+        docker run --rm \
+          -v $(Build.SourcesDirectory)/s/${{ parameters.targetFolder }}:/src \
+          ${{ parameters.yamlinterImage }}:${{ parameters.yamlinterImageTag }} \
+          bash /usr/local/bin/validate_kustomize.sh -d /src
+      displayName: "Custom Validation Script (validate_kustomize.sh)"
