@@ -1,38 +1,36 @@
 trigger:
   branches:
     include:
-      - main
-      - refs/pull/*/merge
+      - main              # Trigger the pipeline on changes to the 'main' branch
+      - refs/pull/*/merge # Also trigger on pull request merge refs (PR validation builds)
   paths:
     include:
-      - environments/**/*
+      - environments/**/* # Only trigger the pipeline if changes occur under the 'environments' directory
 
 resources:
   repositories:
-    # CI build pipeline repository
-    # See: https://github.com/intershop/partner-cicd-yaml-guard
-    - repository: partner-cicd-yaml-guard
-      type: github
-      name: intershop/partner-cicd-yaml-guard
-      endpoint: INTERSHOP_GITHUB
-      ref: refs/heads/stable/yamlinter
+    - repository: partner-cicd-yaml-guard # External repository alias used for templates
+      type: git                           # Type is a Git repository  
+      name: partner-cicd-yaml-guard       # Name of the external repository (as defined in Azure DevOps)
+      ref: refs/heads/main                # Use the 'main' branch of the external repository
+    - repository: environments            # Local or secondary repo checked out for validation
+      type: git
+      name: environments                  # Name of the repository
+      ref: master                         # Use the 'master' branch of the environments repo
 
 
 variables:  
   # Library pwa-build-configuration is provided by Intershops DevOps Environment. It provides
-  # the following variables:
-  #  - BUILD_AGENT_POOL:                  name of the build agent pool
-  #  - REPO_SERVICE_CONNECTION:           service connection to the customer ACR
-  #  - REPO_PATH:                         host name and path of the customer ACR
-  - group: pwa-build-configuration
+  - group: pwa-build-configuration        # Import variable group which contains shared pipeline variables
 
 stages:
-- stage: Lint
-  displayName: "YAML Lint Check"
+- stage: Lint  # Define a stage named 'Lint'
+  displayName: "YAML Lint Check" # Display name for UI readability
   jobs:
     - template: lint-yaml-template.yml@partner-cicd-yaml-guard
       parameters:
-        targetFolder: "environments"
-        yamlinterImage: "intershophub/yaml-guard:latest"
-        agentPool: $(BUILD_AGENT_POOL)
-        dockerhubLogin:true
+        targetFolder: "environments"                 # The folder to be scanned for YAML files
+        yamlinterImage: "intershophub/yaml-guard"    # The Docker image used for linting
+        yamlinterImageTag: "latest"                  # The image tag to pull from DockerHub
+        agentPool: $(BUILD_AGENT_POOL)               # Agent pool used, resolved from variable group
+        dockerhubLogin: false                        # No DockerHub login is required (public image assumed)
