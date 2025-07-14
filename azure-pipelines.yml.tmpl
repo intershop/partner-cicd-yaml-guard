@@ -3,6 +3,7 @@ trigger:
     include:
       - main              # Trigger the pipeline on changes to the 'main' branch
       - refs/pull/*/merge # Also trigger on pull request merge refs (PR validation builds)
+      - master
   paths:
     include:
       - environments/**/* # Only trigger the pipeline if changes occur under the 'environments' directory
@@ -20,8 +21,8 @@ resources:
 
 
 variables:  
-  # Library pwa-build-configuration is provided by Intershops DevOps Environment. It provides
-  - group: pwa-build-configuration        # Import variable group which contains shared pipeline variables
+  # Library yamlinter-variables is provided by Intershops DevOps Environment. It provides
+  - group: yamlinter-variables       # Import variable group which contains shared pipeline variables
 
 stages:
 - stage: Lint  # Define a stage named 'Lint'
@@ -32,5 +33,5 @@ stages:
         targetFolder: "environments"                 # The folder to be scanned for YAML files
         yamlinterImage: "intershophub/yaml-guard"    # The Docker image used for linting
         yamlinterImageTag: "latest"                  # The image tag to pull from DockerHub
-        agentPool: $(BUILD_AGENT_POOL)               # Agent pool used, resolved from variable group
+        agentPool: $(BUILD_AGENT_POOL_SMALL)               # Agent pool used, resolved from variable group
         dockerhubLogin: false                        # No DockerHub login is required (public image assumed)

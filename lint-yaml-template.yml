@@ -1,4 +1,5 @@
 parameters:
+  
   # Agent pool to run the pipeline
   - name: agentPool
     type: string
@@ -101,3 +102,4 @@ jobs:
           ${{ parameters.yamlinterImage }}:${{ parameters.yamlinterImageTag }} \
           bash /usr/local/bin/validate_kustomize.sh -d /src
       displayName: "Custom Validation Script (validate_kustomize.sh)"
+
