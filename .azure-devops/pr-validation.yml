@@ -1,0 +1,64 @@
+# Azure Repos Git PR validation runs through a Build validation branch policy.
+# Disable regular push-triggered CI runs for this pipeline.
+trigger: none
+
+variables:
+#  - group: azure-devops-build-machines # BUILD_AGENT_POOL_SMALL
+  - name: DockerHubServiceConnection
+    value: dockerhub-public-image-pull
+
+# Use ISH-Agent:
+# pool: $(BUILD_AGENT_POOL_SMALL)
+# Use MS Agent:
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - checkout: self
+    clean: true
+
+  - task: Docker@2
+    displayName: Docker Hub Login
+    inputs:
+      command: login
+      containerRegistry: $(DockerHubServiceConnection)
+
+  - task: Bash@3
+    displayName: YAML Validation - /clusters
+    condition: succeededOrFailed()
+    inputs:
+      targetType: filePath
+      filePath: .azure-devops/yaml-validation/run.sh
+      workingDirectory: $(Build.SourcesDirectory)
+
+  - task: Bash@3
+    displayName: kubeconform Validation - /clusters
+    condition: succeededOrFailed()
+    inputs:
+      targetType: filePath
+      filePath: .azure-devops/kubeconform-validation/run.sh
+      workingDirectory: $(Build.SourcesDirectory)
+
+  - task: Bash@3
+    displayName: Kustomize Validation - /clusters
+    condition: succeededOrFailed()
+    inputs:
+      targetType: filePath
+      filePath: .azure-devops/kustomize-validation/run.sh
+      workingDirectory: $(Build.SourcesDirectory)
+    
+  - task: Bash@3
+    displayName: HAProxy Validation - Python in Docker
+    condition: succeededOrFailed()
+    inputs:
+      targetType: filePath
+      filePath: .azure-devops/haproxy-validation/run.sh
+      workingDirectory: $(Build.SourcesDirectory)
+    
+  - task: Docker@2
+    displayName: Docker Hub Logout
+    condition: always()
+    continueOnError: true
+    inputs:
+      command: logout
+      containerRegistry: $(DockerHubServiceConnection)

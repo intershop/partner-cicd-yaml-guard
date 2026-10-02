@@ -1,0 +1,47 @@
+extends: default
+ignore: |
+  .git/
+  .local/
+  .vscode/
+  **/vendor/
+
+rules:
+  line-length:
+    max: 160
+    level: warning
+    allow-non-breakable-words: true
+    allow-non-breakable-inline-mappings: true
+
+  truthy:
+    level: error
+    allowed-values: ["true", "false"]
+    check-keys: false
+
+  key-duplicates: enable
+
+  trailing-spaces: enable
+  new-line-at-end-of-file: enable
+
+  new-lines:
+    type: unix
+
+  empty-lines:
+    max: 1
+    max-start: 0
+    max-end: 0
+
+  document-start: disable
+  document-end: disable
+  comments-indentation: disable
+  key-ordering: disable
+  quoted-strings: disable
+
+  # Prettier normalizes inline "# comment" spacing to exactly 1 space,
+  # but yamllint's "default" ruleset requires 2. Relax this to 1 so the
+  # two tools agree.
+  comments:
+    min-spaces-from-content: 1
+
+  indentation:
+    spaces: 2
+    indent-sequences: consistent
