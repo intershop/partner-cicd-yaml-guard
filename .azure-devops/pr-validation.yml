@@ -1,17 +1,7 @@
-# Azure Repos Git PR validation runs through a Build validation branch policy.
-# Disable regular push-triggered CI runs for this pipeline.
-trigger: none
-
-variables:
-#  - group: azure-devops-build-machines # BUILD_AGENT_POOL_SMALL
-  - name: DockerHubServiceConnection
-    value: dockerhub-public-image-pull
-
-# Use ISH-Agent:
-# pool: $(BUILD_AGENT_POOL_SMALL)
-# Use MS Agent:
-pool:
-  vmImage: ubuntu-latest
+parameters:
+  - name: dockerHubServiceConnection
+    type: string
+    default: dockerhub-public-image-pull
 
 steps:
   - checkout: self
@@ -21,7 +11,7 @@ steps:
     displayName: Docker Hub Login
     inputs:
       command: login
-      containerRegistry: $(DockerHubServiceConnection)
+      containerRegistry: ${{ parameters.dockerHubServiceConnection }}
 
   - task: Bash@3
     displayName: YAML Validation - /clusters
@@ -46,7 +36,7 @@ steps:
       targetType: filePath
       filePath: .azure-devops/kustomize-validation/run.sh
       workingDirectory: $(Build.SourcesDirectory)
-    
+
   - task: Bash@3
     displayName: HAProxy Validation - Python in Docker
     condition: succeededOrFailed()
@@ -54,11 +44,11 @@ steps:
       targetType: filePath
       filePath: .azure-devops/haproxy-validation/run.sh
       workingDirectory: $(Build.SourcesDirectory)
-    
+
   - task: Docker@2
     displayName: Docker Hub Logout
     condition: always()
     continueOnError: true
     inputs:
       command: logout
-      containerRegistry: $(DockerHubServiceConnection)
+      containerRegistry: ${{ parameters.dockerHubServiceConnection }}
