@@ -1,82 +1,73 @@
-# yaml-lint-pipeline-template
+# partner-cicd-yaml-guard
 
-## Overview
+This repository provides reusable Azure DevOps YAML-linting pipeline templates and
+validation scripts for partner repositories. Pipeline definitions and templates
+are kept at the repository root; Azure DevOps pipeline support and check runners
+are grouped under `.azure-devops/`.
 
-This repository provides an Azure DevOps pipeline template for YAML linting. It enables teams to validate YAML syntax and perform custom checks (e.g., `kustomize` validation) using a Docker-based linter image. The pipeline is designed to be reusable and configurable with minimal parameters, supporting both internal and external repositories.
+## Repository layout
 
-Use this template **as-is**. Any custom behavior should be implemented externally and injected via parameters.
-
----
-
-## How to Use the Pipeline Template
-
-To use this pipeline in your project, create a `azure-pipelines.yml` file at the root of your repository with the following content:
-
-```yaml
-# azure-pipelines.yml
-
-trigger:
-  branches:
-    include:
-      - main
-
-resources:
-  repositories:
-    - repository: yaml-lint-pipeline-template
-      type: git
-      name: <project-name>/yaml-lint-pipeline-template
-      ref: refs/heads/main
-
-stages:
-- stage: Lint
-  displayName: "YAML Lint Check"
-  jobs:
-    - template: lint-yaml-template.yml@yaml-lint-pipeline-template
-      parameters:
-        agentPool: '<YourAgentPool>'
-        targetFolder: 'environments'
-        dockerhubLogin: true
-        dockerhubServiceConnection: '<YourDockerHubServiceConnection>'
-        yamlinterImage: 'intershophub/yaml-guard'
-        yamlinterImageTag: 'latest'
+```text
+.
+├── .azure-devops/
+│   ├── pr-validation.yml
+│   ├── yaml-validation/
+│   ├── kubeconform-validation/
+│   ├── kustomize-validation/
+│   └── haproxy-validation/
+├── azure-pipelines.yml.tmpl
+├── lint-yaml-template.yml
+├── LICENSE
+└── README.md
 ```
 
-After committing this file, create a pipeline in Azure DevOps using this YAML file.
+Each validation directory contains a `run.sh` entry point and any check-specific
+configuration. The PR-validation template invokes each check as a separate
+Azure Pipelines task. See [`.azure-devops/README.md`](.azure-devops/README.md)
+for check behavior, options, and local commands.
 
----
+## Reusable YAML lint pipeline
 
-## Parameters
+`lint-yaml-template.yml` is a reusable job template for YAML linting and custom
+validation. `azure-pipelines.yml.tmpl` is an example consumer pipeline. Adapt
+its repository names, branch, target folder, and agent-pool settings to your
+Azure DevOps project before using it.
 
-| Parameter Name               | Description                                                                     | Default Value                                | Required |
-|------------------------------|---------------------------------------------------------------------------------|----------------------------------------------|----------|
-| `agentPool`                  | Name of the agent pool to run the pipeline.                                     | `''`                                         | ✅       |
-| `yamlinterImage`             | Docker image used for YAML linting.                                             | `'intershophub/yaml-guard'`                  | ✅       |
-| `yamlinterImageTag`          | Tag for the YAML linter Docker image (e.g., `latest`, `v1.2.0`).                | `'latest'`                                   | ✅       |
-| `targetFolder`               | Path inside the repository where YAML files are located.                        | `'.'`                                        | ✅       |
-| `dockerhubLogin`             | Whether to perform DockerHub login before pulling the linter image.             | `false`                                      | ❌       |
-| `dockerhubServiceConnection` | DockerHub service connection name used for login (if `dockerhubLogin` is true). | `'$(DOCKERHUB_PUBLIC_SERVICE_CONNECTION)'`   | 🔁       |
+The example expects an `environments` repository resource and the
+`yamlinter-variables` variable group to be available in the consuming project.
+The linter image also needs to provide the custom validation script referenced
+by the template.
 
-**Note:** Parameters marked with ✅ are required. 🔁 is only required when `dockerhubLogin` is `true`.
+## Running this repository's PR validations
 
----
+To run the repository checks from an Azure Pipeline, include the PR-validation
+template in a job:
 
-## Linter Behavior
+```yaml
+jobs:
+  - job: validation
+    steps:
+      - template: .azure-devops/pr-validation.yml
+        parameters:
+          dockerHubServiceConnection: dockerhub-public-image-pull
+```
 
-The pipeline:
+Configure the pipeline as a required build-validation policy on the relevant
+Azure Repos branches. The service connection must exist in the Azure DevOps
+project and have permission to pull the validation image.
 
-1. Validates the required parameters.
-2. Pulls the Docker image (`yamlinterImage`) from DockerHub.
-3. Lints all `.yaml` and `.yml` files under `targetFolder` using the image's internal configuration.
-4. Optionally, runs a custom validation script (e.g., `validate_kustomize.sh`) if the image supports it.
+## Running checks locally
 
----
+The validation scripts require Bash and Docker. From the repository root, run
+the checks individually:
 
-## Important Information
+```bash
+bash .azure-devops/yaml-validation/run.sh
+bash .azure-devops/kubeconform-validation/run.sh
+bash .azure-devops/kustomize-validation/run.sh
+bash .azure-devops/haproxy-validation/run.sh
+```
 
-- Always use tagged versions or a stable branch (`main`) for this template to avoid unexpected changes.
-- The template assumes the presence of a repository named `environments` which is checked out under `externals/environments`. Update this behavior as needed if your folder structure differs.
-- The `validate_kustomize.sh` script must exist within the Docker image at `/usr/local/bin`.
-
-## 📝 License
-
-This project is distributed under the MIT License.
+Each runner accepts `--help` to show its options. By default, YAML,
+kubeconform, and kustomize checks inspect `clusters/`; HAProxy validation
+inspects the repository root.

@@ -18,7 +18,7 @@ steps:
     condition: succeededOrFailed()
     inputs:
       targetType: filePath
-      filePath: .azure-devops/yaml-validation/run.sh
+      filePath: tasks/yaml-validation/run.sh
       workingDirectory: $(Build.SourcesDirectory)
 
   - task: Bash@3
@@ -26,7 +26,7 @@ steps:
     condition: succeededOrFailed()
     inputs:
       targetType: filePath
-      filePath: .azure-devops/kubeconform-validation/run.sh
+      filePath: tasks/kubeconform-validation/run.sh
       workingDirectory: $(Build.SourcesDirectory)
 
   - task: Bash@3
@@ -34,7 +34,7 @@ steps:
     condition: succeededOrFailed()
     inputs:
       targetType: filePath
-      filePath: .azure-devops/kustomize-validation/run.sh
+      filePath: tasks/kustomize-validation/run.sh
       workingDirectory: $(Build.SourcesDirectory)
 
   - task: Bash@3
@@ -42,7 +42,7 @@ steps:
     condition: succeededOrFailed()
     inputs:
       targetType: filePath
-      filePath: .azure-devops/haproxy-validation/run.sh
+      filePath: tasks/haproxy-validation/run.sh
       workingDirectory: $(Build.SourcesDirectory)
 
   - task: Docker@2

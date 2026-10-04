@@ -1,6 +1,6 @@
-# flux-ops PR Validation
+# partner-cicd-yaml-guard PR Validation
 
-This folder contains the pull request validation process for the `flux-ops` repository. Azure Repos runs `.azure-devops/pr-validation.yml` as a required build validation. Each check runs as a separate pipeline task.
+This folder contains the pull request validation process for this repository and its partner-repository checks. Azure Repos runs `.azure-devops/pr-validation.yml` as a required build validation. Each check runs as a separate pipeline task.
 
 ## Checks
 
