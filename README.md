@@ -40,21 +40,48 @@ by the template.
 
 ## Running this repository's PR validations
 
-To run the repository checks from an Azure Pipeline, include the PR-validation
-template in a job:
+To run the checks from an Azure Pipeline, declare the template repository as a
+repository resource and include the PR-validation template from a job. The
+template checks out both the consuming repository (`self`) and the template
+repository:
 
 ```yaml
+resources:
+  repositories:
+    - repository: partner-cicd-yaml-guard
+      type: git
+      name: YourProject/partner-cicd-yaml-guard
+      ref: refs/heads/main
+
 jobs:
   - job: validation
     steps:
-      - template: .azure-devops/pr-validation.yml
+      - template: pr-validation.yml@partner-cicd-yaml-guard
         parameters:
           dockerHubServiceConnection: dockerhub-public-image-pull
+          enableDockerLogin: true
+          templateRepository: partner-cicd-yaml-guard
+          templateRepositoryFolder: partner-cicd-yaml-guard
+          testFolder: /clusters
+          enableYamlValidation: true
+          enableKubeconformValidation: true
+          enableKustomizeValidation: true
+          enableHaproxyValidation: true
 ```
 
+All validation switches default to `true`. Set `enableDockerLogin` to `false`
+to skip both Docker login and logout (for example, when the image is public).
+`templateRepository` is the repository resource alias containing the validation
+scripts; use `self` if those scripts are in the consuming repository.
+`templateRepositoryFolder` is the directory under `$(Pipeline.Workspace)/s`
+where the scripts are checked out. `testFolder` is appended to the self-repository
+checkout directory and defaults to `/clusters`. The Docker service connection
+is only used when Docker login is enabled.
+
 Configure the pipeline as a required build-validation policy on the relevant
-Azure Repos branches. The service connection must exist in the Azure DevOps
-project and have permission to pull the validation image.
+Azure Repos branches. When Docker login is enabled, the service connection must
+exist in the Azure DevOps project and have permission to pull the validation
+image.
 
 ## Running checks locally
 

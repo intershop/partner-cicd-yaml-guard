@@ -2,53 +2,92 @@ parameters:
   - name: dockerHubServiceConnection
     type: string
     default: dockerhub-public-image-pull
+  - name: enableDockerLogin
+    type: boolean
+    default: true
+  - name: testFolder
+    type: string
+    default: /clusters
+  - name: templateRepository
+    type: string
+    default: self
+  - name: templateRepositoryFolder
+    type: string
+    default: partner-cicd-yaml-guard
+  - name: enableYamlValidation
+    type: boolean
+    default: true
+  - name: enableKubeconformValidation
+    type: boolean
+    default: true
+  - name: enableKustomizeValidation
+    type: boolean
+    default: true
+  - name: enableHaproxyValidation
+    type: boolean
+    default: true
 
 steps:
   - checkout: self
     clean: true
 
-  - task: Docker@2
-    displayName: Docker Hub Login
-    inputs:
-      command: login
-      containerRegistry: ${{ parameters.dockerHubServiceConnection }}
+  - ${{ if ne(parameters.templateRepository, 'self') }}:
+    - checkout: ${{ parameters.templateRepository }}
+      clean: true
+      path: s/${{ parameters.templateRepositoryFolder }}
 
-  - task: Bash@3
-    displayName: YAML Validation - /clusters
-    condition: succeededOrFailed()
-    inputs:
-      targetType: filePath
-      filePath: $(Pipeline.Workspace)/s/partner-cicd-yaml-guard/tasks/yaml-validation/run.sh
-      workingDirectory: $(Build.SourcesDirectory)
+  - ${{ if eq(parameters.enableDockerLogin, true) }}:
+    - task: Docker@2
+      displayName: Docker Hub Login
+      inputs:
+        command: login
+        containerRegistry: ${{ parameters.dockerHubServiceConnection }}
 
-  - task: Bash@3
-    displayName: kubeconform Validation - /clusters
-    condition: succeededOrFailed()
-    inputs:
-      targetType: filePath
-      filePath: $(Pipeline.Workspace)/s/partner-cicd-yaml-guard/tasks/kubeconform-validation/run.sh
-      workingDirectory: $(Build.SourcesDirectory)
+  - ${{ if eq(parameters.enableYamlValidation, true) }}:
+    - task: Bash@3
+      displayName: YAML Validation - ${{ parameters.testFolder }}
+      condition: succeededOrFailed()
+      inputs:
+        targetType: filePath
+        filePath: $(Pipeline.Workspace)/s/${{ parameters.templateRepositoryFolder }}/tasks/yaml-validation/run.sh
+        arguments: --test-folder "$PWD${{ parameters.testFolder }}"
+        workingDirectory: $(Build.Repository.LocalPath)
 
-  - task: Bash@3
-    displayName: Kustomize Validation - /clusters
-    condition: succeededOrFailed()
-    inputs:
-      targetType: filePath
-      filePath: $(Pipeline.Workspace)/s/partner-cicd-yaml-guard/tasks/kustomize-validation/run.sh
-      workingDirectory: $(Build.SourcesDirectory)
+  - ${{ if eq(parameters.enableKubeconformValidation, true) }}:
+    - task: Bash@3
+      displayName: kubeconform Validation - ${{ parameters.testFolder }}
+      condition: succeededOrFailed()
+      inputs:
+        targetType: filePath
+        filePath: $(Pipeline.Workspace)/s/${{ parameters.templateRepositoryFolder }}/tasks/kubeconform-validation/run.sh
+        arguments: --test-folder "$PWD${{ parameters.testFolder }}"
+        workingDirectory: $(Build.Repository.LocalPath)
 
-  - task: Bash@3
-    displayName: HAProxy Validation - Python in Docker
-    condition: succeededOrFailed()
-    inputs:
-      targetType: filePath
-      filePath: $(Pipeline.Workspace)/s/partner-cicd-yaml-guard/tasks/haproxy-validation/run.sh
-      workingDirectory: $(Build.SourcesDirectory)
+  - ${{ if eq(parameters.enableKustomizeValidation, true) }}:
+    - task: Bash@3
+      displayName: Kustomize Validation - ${{ parameters.testFolder }}
+      condition: succeededOrFailed()
+      inputs:
+        targetType: filePath
+        filePath: $(Pipeline.Workspace)/s/${{ parameters.templateRepositoryFolder }}/tasks/kustomize-validation/run.sh
+        arguments: --test-folder "$PWD${{ parameters.testFolder }}"
+        workingDirectory: $(Build.Repository.LocalPath)
 
-  - task: Docker@2
-    displayName: Docker Hub Logout
-    condition: always()
-    continueOnError: true
-    inputs:
-      command: logout
-      containerRegistry: ${{ parameters.dockerHubServiceConnection }}
+  - ${{ if eq(parameters.enableHaproxyValidation, true) }}:
+    - task: Bash@3
+      displayName: HAProxy Validation - ${{ parameters.testFolder }}
+      condition: succeededOrFailed()
+      inputs:
+        targetType: filePath
+        filePath: $(Pipeline.Workspace)/s/${{ parameters.templateRepositoryFolder }}/tasks/haproxy-validation/run.sh
+        arguments: --test-folder "$PWD${{ parameters.testFolder }}"
+        workingDirectory: $(Build.Repository.LocalPath)
+
+  - ${{ if eq(parameters.enableDockerLogin, true) }}:
+    - task: Docker@2
+      displayName: Docker Hub Logout
+      condition: always()
+      continueOnError: true
+      inputs:
+        command: logout
+        containerRegistry: ${{ parameters.dockerHubServiceConnection }}

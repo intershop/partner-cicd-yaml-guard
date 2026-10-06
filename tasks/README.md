@@ -18,9 +18,9 @@ The script accepts these optional parameters:
 
 - `--image IMAGE`: Docker image; defaults to `intershophub/yaml-guard:<TAG>` (or `YAML_GUARD_IMAGE` if set).
 - `--test-folder FOLDER`: folder containing the YAML files to check; defaults to `clusters/` in the Azure Pipelines self repository checkout (or the current working directory when run locally).
-- `--config FILE`: yamllint configuration; defaults to `.azure-devops/yaml-validation/.yamllint`.
+- `--config FILE`: yamllint configuration; defaults to `tasks/yaml-validation/.yamllint-intershop-default`.
 
-Directory and file paths can be absolute or relative to the current working directory. The PR validation task passes no arguments, so it checks the self repository's `clusters/` directory and uses the lint configuration shipped with this template.
+Directory and file paths can be absolute or relative to the current working directory. The PR-validation template passes the configured `testFolder` under the self-repository checkout and uses the lint configuration shipped with this template.
 
 ### kubeconform Validation
 

@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_ROOT="${BUILD_REPOSITORY_LOCALPATH:-${BUILD_SOURCESDIRECTORY:-$PWD}}"
 IMAGE="${YAML_GUARD_IMAGE:-intershophub/yaml-guard:1.0.0}"
 TEST_FOLDER="${SOURCE_ROOT}/flux-ops/clusters"
-LINT_CONFIG="${SCRIPT_DIR}/.yamllint"
+LINT_CONFIG="${SCRIPT_DIR}/.yamllint-intershop-default"
 
 usage() {
   cat <<EOF
@@ -94,6 +94,6 @@ DOCKER_LINT_CONFIG="$(docker_path "$LINT_CONFIG")"
 # Run yamllint in Docker using the converted paths.
 MSYS_NO_PATHCONV=1 docker run --rm \
   --mount "type=bind,source=${DOCKER_TEST_FOLDER},target=/workspace/test-folder,readonly" \
-  --mount "type=bind,source=${DOCKER_LINT_CONFIG},target=/config/.yamllint,readonly" \
+  --mount "type=bind,source=${DOCKER_LINT_CONFIG},target=/config/.yamllint-intershop-default,readonly" \
   "${IMAGE}" \
-  yamllint --config-file /config/.yamllint /workspace/test-folder
+  yamllint --config-file /config/.yamllint-intershop-default /workspace/test-folder
