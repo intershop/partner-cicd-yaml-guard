@@ -3,9 +3,9 @@
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
+SOURCE_ROOT="${BUILD_REPOSITORY_LOCALPATH:-${BUILD_SOURCESDIRECTORY:-$PWD}}"
 IMAGE="${YAML_GUARD_IMAGE:-intershophub/yaml-guard:1.0.0}"
-TEST_FOLDER="${REPO_ROOT}/clusters"
+TEST_FOLDER="${SOURCE_ROOT}/clusters"
 CONFIG_SCRIPT="${SCRIPT_DIR}/config/config.sh"
 
 usage() {
