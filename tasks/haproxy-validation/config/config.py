@@ -53,9 +53,9 @@ def validate_ip_file(path: Path) -> list[str]:
                 errors.append(f"{path}:{number}: Comment must start with '# '.")
         else:
             try:
-                ipaddress.IPv4Network(line, strict=False)
+                ipaddress.ip_network(line, strict=False)
             except ValueError:
-                errors.append(f"{path}:{number}: Invalid IPv4 address or subnet '{line}'.")
+                errors.append(f"{path}:{number}: Invalid IP address or subnet '{line}'.")
     return errors
 
 
